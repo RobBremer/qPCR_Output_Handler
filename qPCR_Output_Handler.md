@@ -1,5 +1,6 @@
+# Handling Folders Full of Raw qPCR data from a StepOne Plus or Quantstudio 3
 
-getwd()
+# Load Packages
 
 library(purrr)
 library(readr)
@@ -9,14 +10,19 @@ library(janitor)
 library(outliers)
 library(writexl)
 library(dplyr)
-?list.files
+library(rmarkdown)
+library(knitr)
+
+# Read in excel files from the folder into a list
 
 excel_files <- list.files(path = "C:/Users/Robert.Bremer/Documents/NOAA Projects/qPCR Outputs Old/mwkBB",
     pattern = "*.xls",
     full.names = TRUE)
-    
+
+# View the list of excel files
 excel_files
 
+# Search Function to assign values at the header of the excel file to a column
 searcher <- function(df) {
   df <- read_excel(df, sheet = "Results", col_names = F)
   block <- df[1,2]
@@ -39,9 +45,10 @@ searcher <- function(df) {
   return(df_edited)
 }
 
-
+# Applying searcher to the excel files and binding them together
 all_df <- map_df(excel_files, searcher)
 
+# Cleaning the document
 all_df_edited <- all_df %>%
   mutate(sample_name = as.numeric(sample_name)) %>%
   mutate(across(c(ct, ct_mean, ct_sd, quantity, quantity_sd, ct_threshold), na_if, "Undetermined")) %>%
@@ -52,6 +59,7 @@ all_df_edited <- all_df %>%
   mutate(quantity_sd = as.numeric(quantity_sd)) %>%
   mutate(ct_threshold = as.numeric(ct_threshold))
 
+#More cleaning
 all_df_edited$block <- unlist(all_df_edited$block)
 all_df_edited$chemistry <- unlist(all_df_edited$chemistry)
 all_df_edited$filename <- unlist(all_df_edited$filename)
@@ -65,9 +73,6 @@ df.list <- lapply(excel_files, read_excel(path = excel_files, sheet="Results"))
 
 df.list1 <- map_df(df.list, searcher)
 
-?extract
-
-?map_df
 # A lot of the stuff directly below this is experimental, trying to get it to work perfect every time, with the old and new qpcr machines
 excel_files1 <- purrr::map_df(excel_files, ~.x, read_excel(sheet = "Results"), .id = "id")
 
